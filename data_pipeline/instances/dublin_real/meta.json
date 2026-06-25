@@ -1,0 +1,16 @@
+{
+  "name": "dublin_real",
+  "n_nodes": 101,
+  "n_scenarios": 60,
+  "geometry": "REAL Fingal solar-bin coordinates (190 bins, dense subset)",
+  "demand": "REAL per-bin Liters level x REAL-CALIBRATED CV (Austin)",
+  "travel_time": "REAL-CALIBRATED distance x NYC empirical congestion-by-hour regime",
+  "speed_levels_kmh": {
+    "low": 21.0,
+    "med": 25.4,
+    "high": 31.0
+  },
+  "low_feasible_frac": 0.9056432375910859,
+  "high_feasible_frac": 0.26257229683364375,
+  "demand_mean_m3": 1.1988076408624357
+}

@@ -1,0 +1,17 @@
+{
+  "name": "solomon_c101",
+  "family": "C1",
+  "n_nodes": 101,
+  "n_scenarios": 60,
+  "geometry": "BENCHMARK Solomon (classical)",
+  "time_windows": "BENCHMARK Solomon",
+  "demand": "BENCHMARK level x REAL-CALIBRATED CV (Austin)",
+  "travel_time": "REAL-CALIBRATED distance x NYC congestion regime",
+  "speed_levels_kmh": {
+    "low": 32.0,
+    "med": 38.8,
+    "high": 47.6
+  },
+  "low_feasible_frac": 0.8115201124072803,
+  "high_feasible_frac": 0.18004444008757312
+}

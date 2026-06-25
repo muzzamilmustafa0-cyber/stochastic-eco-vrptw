@@ -1,0 +1,12 @@
+instance,nodes,scenarios,speeds_kmh,demand_mean_m3,demand_cv,feas_low,feas_high,geometry,travel_time,demand_src
+dublin_real,101,60,21.0/25.4/31.0,1.2,0.74,0.91,0.26,"REAL Fingal solar-bin coordinates (190 bins, dense subset)",REAL-CALIBRATED distance x NYC empirical congestion-by-hour regime,REAL per-bin Liters level x REAL-CALIBRATED CV (Austin)
+nyc_brooklyn,31,60,12.2/13.9/16.3,1.43,0.52,0.91,0.51,REAL NYC TLC zone centroids,REAL NYC TLC OD x hour,REAL borough level (DSNY) x REAL-CALIBRATED CV (Austin)
+nyc_manhattan,61,60,14.3/17.8/23.1,1.09,0.52,0.86,0.26,REAL NYC TLC zone centroids,REAL NYC TLC OD x hour,REAL borough level (DSNY) x REAL-CALIBRATED CV (Austin)
+nyc_queens,31,60,27.8/36.9/46.9,1.2,0.52,0.82,0.2,REAL NYC TLC zone centroids,REAL NYC TLC OD x hour,REAL borough level (DSNY) x REAL-CALIBRATED CV (Austin)
+peshawar_real,111,60,18.1/21.9/26.7,1.55,0.56,0.92,0.3,REAL WSSP Zone D coordinates (manuscript register),REAL-CALIBRATED distance x NYC congestion,REAL per-node demand (m3) x REAL-CALIBRATED CV (Austin)
+solomon_c101,101,60,32.0/38.8/47.6,18.07,0.73,0.81,0.18,BENCHMARK Solomon (classical),REAL-CALIBRATED distance x NYC congestion regime,BENCHMARK level x REAL-CALIBRATED CV (Austin)
+solomon_c201,101,60,31.6/38.7/47.3,18.11,0.7,0.84,0.22,BENCHMARK Solomon (classical),REAL-CALIBRATED distance x NYC congestion regime,BENCHMARK level x REAL-CALIBRATED CV (Austin)
+solomon_r102,101,60,31.7/38.7/46.8,14.71,0.77,0.83,0.21,BENCHMARK Solomon (classical),REAL-CALIBRATED distance x NYC congestion regime,BENCHMARK level x REAL-CALIBRATED CV (Austin)
+solomon_r202,101,60,32.0/38.7/46.7,14.48,0.72,0.84,0.27,BENCHMARK Solomon (classical),REAL-CALIBRATED distance x NYC congestion regime,BENCHMARK level x REAL-CALIBRATED CV (Austin)
+solomon_rc101,101,60,31.7/38.7/46.7,17.15,0.66,0.82,0.2,BENCHMARK Solomon (classical),REAL-CALIBRATED distance x NYC congestion regime,BENCHMARK level x REAL-CALIBRATED CV (Austin)
+solomon_rc201,101,60,32.1/38.8/46.9,17.31,0.7,0.83,0.25,BENCHMARK Solomon (classical),REAL-CALIBRATED distance x NYC congestion regime,BENCHMARK level x REAL-CALIBRATED CV (Austin)

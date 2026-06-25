@@ -1,0 +1,16 @@
+{
+  "borough": "Manhattan",
+  "n_nodes": 61,
+  "n_scenarios": 60,
+  "geometry": "REAL NYC TLC zone centroids",
+  "travel_time": "REAL NYC TLC OD x hour",
+  "demand": "REAL borough level (DSNY) x REAL-CALIBRATED CV (Austin)",
+  "speed_levels_kmh": {
+    "low": 14.3,
+    "med": 17.8,
+    "high": 23.1
+  },
+  "demand_borough_level": 0.84,
+  "high_feasible_frac": 0.25991220997939624,
+  "low_feasible_frac": 0.8637239093433665
+}

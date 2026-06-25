@@ -1,0 +1,16 @@
+{
+  "borough": "Brooklyn",
+  "n_nodes": 31,
+  "n_scenarios": 60,
+  "geometry": "REAL NYC TLC zone centroids",
+  "travel_time": "REAL NYC TLC OD x hour",
+  "demand": "REAL borough level (DSNY) x REAL-CALIBRATED CV (Austin)",
+  "speed_levels_kmh": {
+    "low": 12.2,
+    "med": 13.9,
+    "high": 16.3
+  },
+  "demand_borough_level": 1.016,
+  "high_feasible_frac": 0.5101977107180021,
+  "low_feasible_frac": 0.9080645161290323
+}

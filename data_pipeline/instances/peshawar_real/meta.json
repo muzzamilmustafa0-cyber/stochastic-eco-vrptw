@@ -1,0 +1,18 @@
+{
+  "name": "peshawar_real",
+  "n_nodes": 111,
+  "n_scenarios": 60,
+  "role": "CASE STUDY",
+  "geometry": "REAL WSSP Zone D coordinates (manuscript register)",
+  "demand": "REAL per-node demand (m3) x REAL-CALIBRATED CV (Austin)",
+  "time_windows": "REAL WSSP register",
+  "travel_time": "REAL-CALIBRATED distance x NYC congestion",
+  "speed_levels_kmh": {
+    "low": 18.1,
+    "med": 21.9,
+    "high": 26.7
+  },
+  "low_feasible_frac": 0.924785596407218,
+  "high_feasible_frac": 0.29686713740767795,
+  "demand_mean_m3": 1.5534183372310002
+}
