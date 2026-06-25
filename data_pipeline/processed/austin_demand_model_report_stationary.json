@@ -1,0 +1,26 @@
+{
+  "n_fit": 71264,
+  "n_calib": 12518,
+  "n_test": 19970,
+  "n_routes": 648,
+  "temporal_split_date": "2019-03-14",
+  "conformal_correction_kg": 1003.7,
+  "pinball_q10": 808.2,
+  "pinball_q50": 1829.6,
+  "pinball_q90": 1001.7,
+  "P50_MAE_kg": 3659.2,
+  "P50_WAPE": 0.192,
+  "P50_MdAPE": 0.148,
+  "PI80_coverage": 0.783,
+  "PI80_target": 0.8,
+  "features": [
+    "dow",
+    "month",
+    "doy",
+    "route_code",
+    "ltype_code",
+    "log_hist",
+    "route_hist_std"
+  ],
+  "note": "Real Austin daily route loads; log-target quantile LightGBM; temporal holdout; routes>=60 obs."
+}

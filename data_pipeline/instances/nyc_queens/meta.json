@@ -1,0 +1,16 @@
+{
+  "borough": "Queens",
+  "n_nodes": 31,
+  "n_scenarios": 60,
+  "geometry": "REAL NYC TLC zone centroids",
+  "travel_time": "REAL NYC TLC OD x hour",
+  "demand": "REAL borough level (DSNY) x REAL-CALIBRATED CV (Austin)",
+  "speed_levels_kmh": {
+    "low": 27.8,
+    "med": 36.9,
+    "high": 46.9
+  },
+  "demand_borough_level": 1.032,
+  "high_feasible_frac": 0.19507457509538675,
+  "low_feasible_frac": 0.817967395074575
+}

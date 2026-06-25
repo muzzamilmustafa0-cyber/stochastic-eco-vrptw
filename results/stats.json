@@ -1,0 +1,302 @@
+{
+  "E_cost": {
+    "friedman": {
+      "friedman_chi2": 47.14527286702534,
+      "p": 1.4386287904659457e-07,
+      "df": 8,
+      "mean_ranks": {
+        "DF-CC*": 1.318,
+        "DF-CC": 3.318,
+        "S-HGLS": 3.864,
+        "DF-det": 4.545,
+        "LA-SHGLS": 5.045,
+        "PTO-HGLS": 6.318,
+        "D-HGLS": 6.318,
+        "Q-HGLS": 6.364,
+        "RO-Eco": 7.909
+      }
+    },
+    "pairwise_vs_proposed": [
+      {
+        "baseline": "D-HGLS",
+        "n": 11,
+        "median_relgap_%": 6.54,
+        "proposed_wins": 11,
+        "ties": 0,
+        "losses": 0,
+        "wilcoxon_p": 0.00049,
+        "holm_p": 0.00391
+      },
+      {
+        "baseline": "PTO-HGLS",
+        "n": 11,
+        "median_relgap_%": 6.54,
+        "proposed_wins": 11,
+        "ties": 0,
+        "losses": 0,
+        "wilcoxon_p": 0.00049,
+        "holm_p": 0.00391
+      },
+      {
+        "baseline": "Q-HGLS",
+        "n": 11,
+        "median_relgap_%": 9.44,
+        "proposed_wins": 10,
+        "ties": 0,
+        "losses": 1,
+        "wilcoxon_p": 0.00098,
+        "holm_p": 0.00488
+      },
+      {
+        "baseline": "RO-Eco",
+        "n": 11,
+        "median_relgap_%": 17.47,
+        "proposed_wins": 10,
+        "ties": 0,
+        "losses": 1,
+        "wilcoxon_p": 0.00098,
+        "holm_p": 0.00488
+      },
+      {
+        "baseline": "S-HGLS",
+        "n": 11,
+        "median_relgap_%": 2.82,
+        "proposed_wins": 10,
+        "ties": 1,
+        "losses": 0,
+        "wilcoxon_p": 0.00098,
+        "holm_p": 0.00488
+      },
+      {
+        "baseline": "LA-SHGLS",
+        "n": 11,
+        "median_relgap_%": 3.29,
+        "proposed_wins": 10,
+        "ties": 1,
+        "losses": 0,
+        "wilcoxon_p": 0.00098,
+        "holm_p": 0.00488
+      },
+      {
+        "baseline": "DF-det",
+        "n": 11,
+        "median_relgap_%": 3.16,
+        "proposed_wins": 11,
+        "ties": 0,
+        "losses": 0,
+        "wilcoxon_p": 0.00049,
+        "holm_p": 0.00391
+      },
+      {
+        "baseline": "DF-CC",
+        "n": 11,
+        "median_relgap_%": 2.13,
+        "proposed_wins": 10,
+        "ties": 1,
+        "losses": 0,
+        "wilcoxon_p": 0.00098,
+        "holm_p": 0.00488
+      }
+    ]
+  },
+  "CVaR_cost": {
+    "friedman": {
+      "friedman_chi2": 35.90468870099922,
+      "p": 1.8279831941472475e-05,
+      "df": 8,
+      "mean_ranks": {
+        "DF-CC*": 1.682,
+        "S-HGLS": 3.955,
+        "DF-CC": 4.136,
+        "LA-SHGLS": 4.5,
+        "DF-det": 4.545,
+        "Q-HGLS": 5.909,
+        "PTO-HGLS": 6.409,
+        "D-HGLS": 6.409,
+        "RO-Eco": 7.455
+      }
+    },
+    "pairwise_vs_proposed": [
+      {
+        "baseline": "D-HGLS",
+        "n": 11,
+        "median_relgap_%": 5.28,
+        "proposed_wins": 11,
+        "ties": 0,
+        "losses": 0,
+        "wilcoxon_p": 0.00049,
+        "holm_p": 0.00391
+      },
+      {
+        "baseline": "PTO-HGLS",
+        "n": 11,
+        "median_relgap_%": 5.28,
+        "proposed_wins": 11,
+        "ties": 0,
+        "losses": 0,
+        "wilcoxon_p": 0.00049,
+        "holm_p": 0.00391
+      },
+      {
+        "baseline": "Q-HGLS",
+        "n": 11,
+        "median_relgap_%": 5.04,
+        "proposed_wins": 10,
+        "ties": 0,
+        "losses": 1,
+        "wilcoxon_p": 0.00146,
+        "holm_p": 0.00732
+      },
+      {
+        "baseline": "RO-Eco",
+        "n": 11,
+        "median_relgap_%": 11.86,
+        "proposed_wins": 9,
+        "ties": 0,
+        "losses": 2,
+        "wilcoxon_p": 0.00244,
+        "holm_p": 0.00781
+      },
+      {
+        "baseline": "S-HGLS",
+        "n": 11,
+        "median_relgap_%": 2.54,
+        "proposed_wins": 9,
+        "ties": 1,
+        "losses": 1,
+        "wilcoxon_p": 0.00195,
+        "holm_p": 0.00781
+      },
+      {
+        "baseline": "LA-SHGLS",
+        "n": 11,
+        "median_relgap_%": 3.05,
+        "proposed_wins": 9,
+        "ties": 1,
+        "losses": 1,
+        "wilcoxon_p": 0.00293,
+        "holm_p": 0.00781
+      },
+      {
+        "baseline": "DF-det",
+        "n": 11,
+        "median_relgap_%": 4.15,
+        "proposed_wins": 10,
+        "ties": 0,
+        "losses": 1,
+        "wilcoxon_p": 0.00342,
+        "holm_p": 0.00781
+      },
+      {
+        "baseline": "DF-CC",
+        "n": 11,
+        "median_relgap_%": 2.84,
+        "proposed_wins": 10,
+        "ties": 1,
+        "losses": 0,
+        "wilcoxon_p": 0.00098,
+        "holm_p": 0.00586
+      }
+    ]
+  },
+  "P_overload": {
+    "friedman": {
+      "friedman_chi2": 41.652076318743,
+      "p": 1.5737996705076569e-06,
+      "df": 8,
+      "mean_ranks": {
+        "RO-Eco": 2.409,
+        "Q-HGLS": 3.455,
+        "DF-CC*": 4.136,
+        "DF-CC": 4.773,
+        "LA-SHGLS": 4.955,
+        "S-HGLS": 5.273,
+        "DF-det": 5.909,
+        "D-HGLS": 7.045,
+        "PTO-HGLS": 7.045
+      }
+    },
+    "pairwise_vs_proposed": [
+      {
+        "baseline": "D-HGLS",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 8,
+        "ties": 3,
+        "losses": 0,
+        "wilcoxon_p": 0.00391,
+        "holm_p": 0.03125
+      },
+      {
+        "baseline": "PTO-HGLS",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 8,
+        "ties": 3,
+        "losses": 0,
+        "wilcoxon_p": 0.00391,
+        "holm_p": 0.03125
+      },
+      {
+        "baseline": "Q-HGLS",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 1,
+        "ties": 4,
+        "losses": 6,
+        "wilcoxon_p": 0.98438,
+        "holm_p": 1.0
+      },
+      {
+        "baseline": "RO-Eco",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 0,
+        "ties": 5,
+        "losses": 6,
+        "wilcoxon_p": 1.0,
+        "holm_p": 1.0
+      },
+      {
+        "baseline": "S-HGLS",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 5,
+        "ties": 4,
+        "losses": 2,
+        "wilcoxon_p": 0.23438,
+        "holm_p": 0.9375
+      },
+      {
+        "baseline": "LA-SHGLS",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 4,
+        "ties": 5,
+        "losses": 2,
+        "wilcoxon_p": 0.07812,
+        "holm_p": 0.46875
+      },
+      {
+        "baseline": "DF-det",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 7,
+        "ties": 3,
+        "losses": 1,
+        "wilcoxon_p": 0.09766,
+        "holm_p": 0.48828
+      },
+      {
+        "baseline": "DF-CC",
+        "n": 11,
+        "median_relgap_%": NaN,
+        "proposed_wins": 5,
+        "ties": 4,
+        "losses": 2,
+        "wilcoxon_p": 0.30469,
+        "holm_p": 0.9375
+      }
+    ]
+  }
+}

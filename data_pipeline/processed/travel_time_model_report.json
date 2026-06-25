@@ -1,0 +1,16 @@
+{
+  "n_train": 44308,
+  "n_test": 10890,
+  "MAE_min": 1.44,
+  "MAPE": 0.092,
+  "PI80_coverage_of_median": 0.997,
+  "features": [
+    "dist_km",
+    "hour",
+    "plat",
+    "plon",
+    "dlat",
+    "dlon"
+  ],
+  "note": "Real NYC TLC OD x hour; quantile LightGBM; held-out OD pairs."
+}
