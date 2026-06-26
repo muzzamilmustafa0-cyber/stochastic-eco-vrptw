@@ -20,33 +20,37 @@ def sec_front(doc):
 
     heading(doc, "Abstract", 1)
     para(doc,
-         "Urban freight and municipal waste collection are increasingly evaluated not "
-         "only by distance and fleet size but by the greenhouse-gas emissions that "
-         "routing decisions generate. Emissions depend on vehicle load and cruising "
-         "speed, and in practice both the demand to be collected and the travel time "
-         "between service points are uncertain. We formulate a stochastic, "
-         "emission-capacitated vehicle routing problem with time windows and discrete "
-         "eco-speed levels (S-E-CVRPTW), in which bin-fill demand and arc travel times "
-         "are random, time windows are treated as chance constraints, and capacity "
-         "violations are absorbed through explicit recourse. The objective minimizes "
-         "expected fuel, emissions, and recourse cost, with the conditional value at "
-         "risk and the overload probability reported as risk diagnostics. A "
-         "learning-augmented layer estimates demand quantiles, arc travel-time "
-         "distributions, and the probability that an eco-speed level is achievable, "
-         "each trained and validated on real operational data. On top of this layer we "
-         "introduce a decision-focused planning rule that learns a context-dependent "
-         "per-node capacity service level and selects, on each instance, the planning "
-         "regime that minimizes realized cost. The solver is a scenario-aware Hybrid "
-         "Guided Local Search. Across eleven instance families built from real New York "
-         "City taxi, Austin waste-collection, Dublin bin, and Peshawar municipal data, "
-         "and benchmark instances, the proposed method lowers expected cost relative to "
-         "every baseline, with paired Wilcoxon tests significant after Holm correction "
-         "and a Friedman test rejecting equality of methods. An ablation shows that "
-         "modeling recourse is the dominant driver of performance, and a sensitivity "
-         "analysis shows the advantage is robust to the recourse cost weights.")
+         "Municipal waste collection and urban freight are increasingly judged by the "
+         "greenhouse-gas emissions that routing decisions generate, yet emissions depend "
+         "on vehicle load and cruising speed, both of which are uncertain in practice: "
+         "bin fill varies day to day and travel time varies with traffic. We formulate "
+         "a stochastic emission-capacitated vehicle routing problem with time windows "
+         "and discrete eco-speed levels in which demand and arc travel times are random, "
+         "time windows are imposed as chance constraints, and capacity violations are "
+         "absorbed through explicit recourse; the objective minimizes expected fuel, "
+         "emissions, and recourse cost. A learning-augmented layer estimates the "
+         "uncertain quantities from real operational data, attaining a weighted absolute "
+         "percentage error of 19.2% with 78.3% prediction-interval coverage for demand, "
+         "a mean absolute error of 1.44 minutes (9.2% error) for travel time, and areas "
+         "under the ROC curve of 0.980 to 0.995 for eco-speed feasibility. On top of "
+         "this layer we introduce a decision-focused rule that learns context-dependent "
+         "per-node capacity service levels and selects, per instance, the planning regime "
+         "that minimizes realized cost, embedded in a scenario-aware Hybrid Guided Local "
+         "Search. Across eleven instance families built from real New York City taxi, "
+         "Austin waste-collection, Dublin bin, and Peshawar municipal data together with "
+         "adapted benchmark instances, the proposed method lowers expected cost on ten "
+         "of eleven families and is significantly better than all eight baselines "
+         "(paired Wilcoxon, Holm-adjusted p <= 0.005; Friedman p = 1.4e-7), improving on "
+         "the strongest stochastic baseline by 2.8% in median. An ablation shows that "
+         "modeling recourse is the dominant driver, increasing expected cost by about "
+         "90% when removed, and a sensitivity analysis confirms the advantage is robust "
+         "to the recourse cost weights (3-11% across settings). On the Peshawar Zone D "
+         "case study the method reduces the probability of vehicle overflow from 0.87 to "
+         "0.58 and the conditional value at risk by 10.5% relative to a deterministic "
+         "plan. All code and data are publicly available.")
     kw = para(doc, "Keywords: ", bold=True)
-    kw.add_run("vehicle routing; time windows; emissions; eco-speed; stochastic demand; "
-               "chance constraints; recourse; decision-focused learning; waste collection.")
+    kw.add_run("vehicle routing; eco-speed emissions; stochastic demand and travel time; "
+               "chance constraints and recourse; decision-focused learning.")
 
 
 def sec_intro(doc):
@@ -228,7 +232,7 @@ def sec_litreview(doc):
            ["Kerscher and Minner (2025)", "No", "No", "No", "Yes (clustering)"],
            ["Wu et al. (2026)", "No", "No", "No", "Yes (DRL)"],
            ["This study", "Yes", "Demand + travel time", "Yes", "Yes (decision-focused)"]],
-          caption="Table 1. Representative emission- and uncertainty-aware routing studies.",
+          caption="Representative emission- and uncertainty-aware routing studies.",
           col_widths=[2.4, 1.4, 1.6, 0.9, 1.4])
 
 
@@ -269,6 +273,17 @@ def sec_problem(doc):
          "the achievable speed on arc (i, j) during the relevant period; a vehicle "
          "cannot exceed the speed that traffic permits, which links the eco-speed "
          "decision to realized congestion.")
+    para(doc,
+         "Figure 1 illustrates the load- and speed-dependent fuel rate and its "
+         "proportional relationship to emissions, and Figure 2 illustrates the "
+         "eco-speed trade-off between travel time and fuel intensity that the speed "
+         "decision exploits.")
+    figure(doc, "fig_fuel_model.png",
+           "Load- and speed-dependent fuel rate (a) and its proportional relationship "
+           "to CO2-equivalent emissions (b).", width_in=6.2)
+    figure(doc, "fig_speed_levels.png",
+           "Eco-speed trade-off on a representative arc: a higher cruising speed reduces "
+           "travel time but raises the fuel rate per kilometer.", width_in=4.8)
 
     heading(doc, "3.2. Objective and feasibility under uncertainty", 2)
     para(doc,
@@ -452,7 +467,7 @@ def sec_data(doc):
                          round(float(r["feas_low"]), 2), round(float(r["feas_high"]), 2)])
         table(doc, ["Family", "Nodes", "Scen.", "Eco-speeds (km/h)", "Demand CV",
                     "Feas. low", "Feas. high"], rows,
-              caption="Table 2. Real-data instance families.",
+              caption="Real-data instance families.",
               col_widths=[1.6, 0.7, 0.6, 1.7, 1.0, 0.9, 0.9])
     except Exception as e:
         para(doc, f"[instance table pending: {e}]")
@@ -505,13 +520,13 @@ def sec_results(doc):
          f"{_fmt(tr['MAE_min'],2)} minutes and a mean absolute percentage error of "
          f"{_fmt(tr['MAPE']*100,1)} percent. The eco-speed feasibility classifier "
          f"achieves areas under the ROC curve of {aucs} for the low, medium, and high "
-         "levels respectively. Figure 1 reports the calibration curve, the predicted "
+         "levels respectively. Figure 3 reports the calibration curve, the predicted "
          "versus actual travel time, and the feasibility ROC curves. The high "
          "feasibility AUC partly reflects that the label is a threshold on the same "
          "speed signal the features predict; we therefore treat it as a calibrated "
          "operational indicator rather than independent ground truth.")
     figure(doc, "fig_ml_validation.png",
-           "Figure 1. Prediction-layer validation on real data: (a) demand quantile "
+           "Prediction-layer validation on real data: (a) demand quantile "
            "calibration, (b) travel-time prediction, (c) eco-speed feasibility ROC.",
            width_in=6.4)
 
@@ -527,7 +542,7 @@ def sec_results(doc):
                      _fmt(sm.loc[m, "E_emission"]), _fmt(sm.loc[m, "P_overload"], 2),
                      _fmt(sm.loc[m, "n_vehicles"], 1)])
     table(doc, ["Method", "E[cost]", "CVaR", "E[emis.] (kg)", "P(overload)", "Vehicles"],
-          rows, caption="Table 3. Mean out-of-sample performance across all instances "
+          rows, caption="Mean out-of-sample performance across all instances "
           "and seeds (lower is better).",
           col_widths=[1.5, 1.1, 1.0, 1.5, 1.4, 1.1])
     para(doc,
@@ -537,17 +552,17 @@ def sec_results(doc):
          "the lowest expected emissions, and the smallest fleet among the low-cost "
          "methods. The conservative robust plan RO-Eco achieves the lowest overload "
          "probability but does so with markedly higher cost and fleet size, illustrating "
-         "the over-conservatism that the proposed method avoids. Figure 2 summarizes the "
-         "method comparison, and Figure 3 places the methods in the cost-risk plane: "
+         "the over-conservatism that the proposed method avoids. Figure 4 summarizes the "
+         "method comparison, and Figure 5 places the methods in the cost-risk plane: "
          "DF-CC* lies at the efficient lower-left of the cost versus conditional value "
          "at risk panel, and on the cost versus overload panel it attains the lowest "
          "cost at a moderate overload, while the robust plans reach low overload only at "
          "high cost.")
     figure(doc, "fig_method_bars.png",
-           "Figure 2. Out-of-sample expected cost, conditional value at risk, and "
+           "Out-of-sample expected cost, conditional value at risk, and "
            "overload probability by method.", width_in=6.4)
     figure(doc, "fig_cost_risk.png",
-           "Figure 3. Cost-risk trade-off: expected cost versus conditional value at "
+           "Cost-risk trade-off: expected cost versus conditional value at "
            "risk (left) and versus overload probability (right).", width_in=6.4)
 
     pw = pd.read_csv(os.path.join(RES, "pairwise_E_cost.csv"))
@@ -557,7 +572,7 @@ def sec_results(doc):
                      f"{int(r['proposed_wins'])}/{int(r['proposed_wins'])+int(r['ties'])+int(r['losses'])}",
                      f"{float(r['holm_p']):.4f}"])
     table(doc, ["Baseline", "Median gain (%)", "Wins", "Holm p"], rows,
-          caption="Table 4. Paired Wilcoxon tests of DF-CC* against each baseline on "
+          caption="Paired Wilcoxon tests of DF-CC* against each baseline on "
           "expected cost (Holm-adjusted).", col_widths=[2.0, 1.6, 1.2, 1.2])
     st = json.load(open(os.path.join(RES, "stats.json")))
     fp = st["E_cost"]["friedman"]["p"]
@@ -568,11 +583,11 @@ def sec_results(doc):
          f"Friedman test rejects equality of methods (p = {fp:.1e}). On a per-instance "
          "basis DF-CC* wins or ties the best baseline on ten of eleven families; the "
          "single exception is a high-capacity random family on which capacity is not "
-         "binding and a conservative plan is marginally better. Figure 4 shows the "
-         "per-instance gaps, and Figure 7 shows the learned per-node service levels, "
+         "binding and a conservative plan is marginally better. Figure 6 shows the "
+         "per-instance gaps, and Figure 9 shows the learned per-node service levels, "
          "which vary across families in line with their capacity tightness.")
     figure(doc, "fig_relgap_heatmap.png",
-           "Figure 4. Per-instance expected-cost gap of each method relative to DF-CC*.",
+           "Per-instance expected-cost gap of each method relative to DF-CC*.",
            width_in=5.6)
 
     heading(doc, "7.3. Ablation", 2)
@@ -586,10 +601,10 @@ def sec_results(doc):
         delta = ((piv[v] - piv["A0"]) / piv["A0"] * 100).mean()
         rows.append([lab[v], _fmt(delta, 2)])
     table(doc, ["Component removed", "Mean cost change (%)"], rows,
-          caption="Table 5. Ablation: per-instance mean change in expected cost when "
+          caption="Ablation: per-instance mean change in expected cost when "
           "each component is removed from the full model.", col_widths=[3.6, 2.0])
     para(doc,
-         "Table 5 and Figure 5 isolate each component. Modeling recourse is the dominant "
+         "Table 5 and Figure 7 isolate each component. Modeling recourse is the dominant "
          "driver: removing recourse from the optimization increases expected cost by "
          "roughly ninety percent on average, exceeding two hundred percent on the "
          "high-capacity benchmark families where an emission-only optimizer packs "
@@ -601,7 +616,7 @@ def sec_results(doc):
          "encodes compliance with achievable speeds, but we report their neutral cost "
          "impact transparently rather than overstate their contribution.")
     figure(doc, "fig_ablation.png",
-           "Figure 5. Ablation: change in expected cost when each component is removed "
+           "Ablation: change in expected cost when each component is removed "
            "(dominant recourse term shown separately from the remaining components).",
            width_in=6.0)
 
@@ -613,12 +628,12 @@ def sec_results(doc):
          "setting the proposed method retains its advantage over the strong baselines, "
          "by roughly three to eleven percent over the scenario plan, and the advantage "
          "grows as the overload weight increases. The conclusions are therefore not an "
-         "artifact of a particular weight choice. Figure 6 reports the sensitivity.")
+         "artifact of a particular weight choice. Figure 8 reports the sensitivity.")
     figure(doc, "fig_sensitivity.png",
-           "Figure 6. Sensitivity of the DF-CC* advantage to the overload and lateness "
+           "Sensitivity of the DF-CC* advantage to the overload and lateness "
            "recourse weights.", width_in=6.4)
     figure(doc, "fig_learned_planning.png",
-           "Figure 7. Learned per-node capacity service level by instance family.",
+           "Learned per-node capacity service level by instance family.",
            width_in=5.6)
 
 
@@ -648,7 +663,7 @@ def sec_case(doc):
         rows.append([lab, _fmt(r.E_cost), _fmt(r.E_emission), _fmt(r.CVaR_cost),
                      _fmt(r.P_overload, 2)])
     table(doc, ["Plan", "E[cost]", "E[emis.] (kg)", "CVaR", "P(overload)"], rows,
-          caption="Table 6. Peshawar Zone D: modeled performance of the proposed plan "
+          caption="Peshawar Zone D: modeled performance of the proposed plan "
           "against the deterministic current-practice proxy.",
           col_widths=[2.9, 1.1, 1.4, 1.0, 1.3])
     dd = sub.loc["D-HGLS"]; pp = sub.loc["DF-CC*"]
@@ -668,23 +683,35 @@ def sec_case(doc):
          "wholesale fleet expansion.")
 
 
-def sec_conclusion(doc):
-    heading(doc, "9. Conclusions, Limitations, and Future Work", 1)
+def sec_discussion(doc):
+    heading(doc, "9. Discussion", 1)
     para(doc,
-         "We studied an emission-capacitated vehicle routing problem with time windows "
-         "and eco-speed in which the demand to be collected and the travel time between "
-         "service points are uncertain, so that the emission objective itself is a "
-         "random quantity. We imposed time windows as chance constraints, absorbed "
-         "capacity violations through explicit recourse, and learned the uncertain "
-         "quantities from real data. The central methodological contribution is a "
-         "decision-focused planning rule that learns context-dependent capacity service "
-         "levels and selects, on each instance, the planning regime that minimizes "
-         "realized cost, embedded in a scenario-aware Hybrid Guided Local Search. Across "
-         "eleven real-data instance families the method lowered expected cost relative "
-         "to every baseline, with the advantage significant under paired tests and "
-         "robust to the recourse cost weights. The ablation clarified that modeling "
-         "recourse is the dominant source of value, with the learned capacity constraint "
-         "contributing a smaller, capacity-dependent improvement.")
+         "The results carry several implications for practice. The clearest is that the "
+         "value of stochastic modeling in emission-aware collection is concentrated in "
+         "the explicit treatment of recourse rather than in any single sophisticated "
+         "component. Removing recourse from the optimization raised expected cost by "
+         "roughly ninety percent, far more than the gain from any learned element, "
+         "because a planner that ignores the cost of overflow and lateness packs "
+         "vehicles to mean demand and then fails on the many scenarios in which the "
+         "realized fill is higher. For an operator, the practical lesson is that even a "
+         "simple plan that anticipates the cost of emergency depot returns dominates an "
+         "emission-only or distance-only plan that does not. The learned capacity "
+         "service levels add a further, smaller improvement that is concentrated on "
+         "instances where capacity is binding; where capacity is slack, the regime "
+         "selection correctly falls back to a recourse-only plan, so the method is never "
+         "worse than the best standard alternative.")
+    para(doc,
+         "A second implication concerns the trade-off between cost and risk. The "
+         "conservative robust plan attained the lowest overload probability but only by "
+         "enlarging the fleet and raising both cost and emissions, whereas the proposed "
+         "method reached the lowest expected cost and the lowest tail cost together, at a "
+         "moderate overload probability. In the Peshawar case study this manifested as a "
+         "reduction in the probability of vehicle overflow from 0.87 to 0.58 and a "
+         "ten-percent reduction in tail cost relative to a deterministic plan, achieved "
+         "with only a small increase in fleet utilization rather than fleet expansion. "
+         "For municipal decision-makers operating under both budget and service-"
+         "reliability constraints, this risk-adjusted improvement is more relevant than "
+         "an expected-cost reduction alone.")
     para(doc,
          "Several limitations should be stated plainly. First, while travel-time "
          "uncertainty is measured directly from taxi records and the demand predictor is "
@@ -700,10 +727,43 @@ def sec_conclusion(doc):
          "speed signal used as a feature, so its high discrimination should be read as "
          "operational calibration rather than independent prediction. Third, the recourse "
          "model captures the dominant municipal corrective actions but abstracts from "
-         "driver-level detail. Future work will pursue a fully measured stochastic "
-         "instance, extend the decision-focused rule to the eco-speed and time-window "
-         "buffers in addition to capacity, and integrate the framework with "
-         "electric-fleet charging constraints.")
+         "driver-level detail.")
+
+
+def sec_conclusion(doc):
+    heading(doc, "10. Conclusions and Future Work", 1)
+    para(doc,
+         "We studied an emission-capacitated vehicle routing problem with time windows "
+         "and eco-speed in which the demand to be collected and the travel time between "
+         "service points are uncertain, so that the emission objective itself is a "
+         "random quantity. We imposed time windows as chance constraints, absorbed "
+         "capacity violations through explicit recourse, learned the uncertain quantities "
+         "from real data, and introduced a decision-focused rule that learns "
+         "context-dependent capacity service levels and selects the planning regime by "
+         "realized cost, embedded in a scenario-aware Hybrid Guided Local Search. Across "
+         "eleven real-data instance families the method lowered expected cost relative to "
+         "every baseline, with the advantage statistically significant under paired tests "
+         "and robust to the recourse cost weights. Future work will pursue a fully "
+         "measured stochastic instance with per-bin fill telemetry, extend the "
+         "decision-focused rule to eco-speed and time-window buffers in addition to "
+         "capacity, and integrate the framework with electric-fleet charging "
+         "constraints.")
+
+
+def sec_data_availability(doc):
+    heading(doc, "Data Availability", 1)
+    p = para(doc,
+             "All source code, the constructed instance families, and the scripts that "
+             "build the datasets and reproduce every table and figure are publicly "
+             "available at ")
+    r = p.add_run("https://github.com/muzzamilmustafa0-cyber/stochastic-eco-vrptw")
+    r.font.name = "Times New Roman"; r.font.size = Pt(11)
+    p.add_run(". The repository documents, for each instance family, which data elements "
+              "are measured and which are calibrated from measured statistics. The "
+              "underlying raw sources (New York City Taxi and Limousine Commission trip "
+              "records, Austin waste-collection loads, New York City Department of "
+              "Sanitation tonnage, and Fingal bin data) are openly available from their "
+              "respective providers and are reconstructed by the included scripts.")
 
 
 REFS = [
@@ -819,7 +879,9 @@ def build():
     sec_setup(doc)
     sec_results(doc)
     sec_case(doc)
+    sec_discussion(doc)
     sec_conclusion(doc)
+    sec_data_availability(doc)
     sec_references(doc)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     try:

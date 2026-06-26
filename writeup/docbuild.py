@@ -16,6 +16,8 @@ EQDIR = os.path.join(HERE, "eq"); os.makedirs(EQDIR, exist_ok=True)
 FIGDIR = os.path.join(os.path.dirname(HERE), "results", "figures")
 
 _eqn = [0]
+_fig = [0]
+_tab = [0]
 
 
 def new_doc():
@@ -77,18 +79,23 @@ def equation(doc, latex, width_in=None):
 
 
 def figure(doc, fname, caption, width_in=6.0):
+    _fig[0] += 1
     path = os.path.join(FIGDIR, fname)
     p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.add_run().add_picture(path, width=Inches(width_in))
     cap = doc.add_paragraph(); cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = cap.add_run(caption); r.italic = True; r.font.size = Pt(10); r.font.name = "Times New Roman"
+    r = cap.add_run(f"Figure {_fig[0]}. {caption}")
+    r.italic = True; r.font.size = Pt(10); r.font.name = "Times New Roman"
     cap.paragraph_format.space_after = Pt(10)
+    return _fig[0]
 
 
 def table(doc, header, rows, caption=None, col_widths=None, fontsize=9):
     if caption:
+        _tab[0] += 1
         cp = doc.add_paragraph(); cp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        r = cp.add_run(caption); r.italic = True; r.font.size = Pt(10); r.font.name = "Times New Roman"
+        r = cp.add_run(f"Table {_tab[0]}. {caption}")
+        r.italic = True; r.font.size = Pt(10); r.font.name = "Times New Roman"
     t = doc.add_table(rows=1, cols=len(header)); t.style = "Table Grid"
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
     for j, h in enumerate(header):
