@@ -52,20 +52,30 @@ def fig_ablation():
     if not os.path.exists(p):
         return
     df = pd.read_csv(p)
-    base = df[df["variant"] == "A0"].groupby("instance")["E_cost"].mean()
-    g = df.groupby(["variant"])["E_cost"].mean()
-    # delta vs A0 (positive = component removal hurts)
-    a0 = g["A0"]
-    delta = (g - a0) / a0 * 100
-    labels = {"A1": "-feasibility", "A2": "-stoch demand", "A3": "-stoch tt",
-              "A4": "-recourse", "A5": "-CVaR", "A6": "-decision-focus"}
-    vs = [v for v in ["A1", "A2", "A3", "A4", "A5", "A6"] if v in delta.index]
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    ax.bar([labels[v] for v in vs], [delta[v] for v in vs], color="#ff7f0e")
-    ax.axhline(0, color="k", lw=0.8)
-    ax.set_ylabel("% E_cost increase vs full model (A0)")
-    ax.set_title("Ablation: cost penalty from removing each component")
-    ax.grid(axis="y", alpha=0.3)
+    # per-instance % change vs A0, then mean +/- std across instances (equal weight)
+    piv = df.groupby(["instance", "variant"])["E_cost"].mean().unstack("variant")
+    labels = {"A1": "- eco-speed\nfeasibility", "A2": "- stochastic\ndemand",
+              "A3": "- stochastic\ntravel-time", "A4": "- recourse",
+              "A5": "- chance\nconstraint"}
+    order = [v for v in ["A4", "A5", "A1", "A2", "A3"] if v in piv.columns]
+    means, stds = {}, {}
+    for v in order:
+        delta = (piv[v] - piv["A0"]) / piv["A0"] * 100.0
+        means[v], stds[v] = delta.mean(), delta.std()
+    # recourse dominates (~+90%); show it on its own panel and the rest zoomed
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(9, 4.2),
+                                   gridspec_kw={"width_ratios": [1, 3]})
+    axL.bar([labels["A4"]], [means["A4"]], yerr=[stds["A4"]], color="#c0392b", capsize=4)
+    axL.set_ylabel("mean % E_cost change vs full model (per-instance)")
+    axL.axhline(0, color="k", lw=0.8); axL.grid(axis="y", alpha=0.3)
+    rest = [v for v in order if v != "A4"]
+    axR.bar([labels[v] for v in rest], [means[v] for v in rest],
+            yerr=[stds[v] for v in rest], color="#2980b9", capsize=4)
+    axR.axhline(0, color="k", lw=0.8); axR.grid(axis="y", alpha=0.3)
+    axR.set_title("remaining components (zoomed)")
+    axL.set_title("dominant component")
+    fig.suptitle("Ablation: cost change when each component is removed "
+                 "(positive = removal increases cost)")
     fig.tight_layout(); fig.savefig(os.path.join(FIG, "fig_ablation.png"), dpi=300)
     plt.close(fig)
 
