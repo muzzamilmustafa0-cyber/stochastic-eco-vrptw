@@ -362,7 +362,13 @@ def sec_method(doc):
          "uncertain quantities from data and produces scenarios; a decision-focused "
          "planning rule that learns context-dependent capacity service levels and "
          "selects a planning regime; and a scenario-aware Hybrid Guided Local Search "
-         "that optimizes routes and eco-speed decisions against the realized objective.")
+         "that optimizes routes and eco-speed decisions against the realized objective. "
+         "Figure 3 gives an end-to-end overview, from the real data sources through the "
+         "prediction layer and scenario generation to the planning rule, the solver, and "
+         "the out-of-sample evaluation.")
+    figure(doc, "fig_framework.png",
+           "Overview of the learning-augmented stochastic eco-routing framework, from "
+           "real data to out-of-sample evaluation.", width_in=6.6)
 
     heading(doc, "4.1. Prediction layer", 2)
     para(doc,
@@ -433,7 +439,14 @@ def sec_method(doc):
          "count low and the strategy stable, and the held-out scoring is what makes the "
          "objective decision-focused rather than a forecast-accuracy surrogate. The "
          "feature standardization, the service-level bounds, and the population size are "
-         "fixed across all instances, so no per-instance tuning is involved.")
+         "fixed across all instances, so no per-instance tuning is involved. Figure 4 "
+         "depicts the resulting decision-focused training loop and the regime-selection "
+         "step.")
+    figure(doc, "fig_method_pipeline.png",
+           "Decision-focused training loop: the predictor maps features to capacity "
+           "service levels, routes are optimized and scored on held-out scenarios, and "
+           "the evolution strategy updates the predictor toward lower realized cost; the "
+           "deployed regime is selected by training cost.", width_in=6.6)
 
     heading(doc, "4.4. Scenario-aware Hybrid Guided Local Search", 2)
     para(doc,
@@ -567,7 +580,7 @@ def sec_results(doc):
          f"{_fmt(tr['MAE_min'],2)} minutes and a mean absolute percentage error of "
          f"{_fmt(tr['MAPE']*100,1)} percent. The eco-speed feasibility classifier "
          f"achieves areas under the ROC curve of {aucs} for the low, medium, and high "
-         "levels respectively. Figure 3 reports the calibration curve, the predicted "
+         "levels respectively. Figure 5 reports the calibration curve, the predicted "
          "versus actual travel time, and the feasibility ROC curves. The high "
          "feasibility AUC partly reflects that the label is a threshold on the same "
          "speed signal the features predict; we therefore treat it as a calibrated "
@@ -599,8 +612,8 @@ def sec_results(doc):
          "the lowest expected emissions, and the smallest fleet among the low-cost "
          "methods. The conservative robust plan RO-Eco achieves the lowest overload "
          "probability but does so with markedly higher cost and fleet size, illustrating "
-         "the over-conservatism that the proposed method avoids. Figure 4 summarizes the "
-         "method comparison, and Figure 5 places the methods in the cost-risk plane: "
+         "the over-conservatism that the proposed method avoids. Figure 6 summarizes the "
+         "method comparison, and Figure 7 places the methods in the cost-risk plane: "
          "DF-CC* lies at the efficient lower-left of the cost versus conditional value "
          "at risk panel, and on the cost versus overload panel it attains the lowest "
          "cost at a moderate overload, while the robust plans reach low overload only at "
@@ -630,8 +643,8 @@ def sec_results(doc):
          f"Friedman test rejects equality of methods (p = {fp:.1e}). On a per-instance "
          "basis DF-CC* wins or ties the best baseline on ten of eleven families; the "
          "single exception is a high-capacity random family on which capacity is not "
-         "binding and a conservative plan is marginally better. Figure 6 shows the "
-         "per-instance gaps, and Figure 9 shows the learned per-node service levels, "
+         "binding and a conservative plan is marginally better. Figure 8 shows the "
+         "per-instance gaps, and Figure 11 shows the learned per-node service levels, "
          "which vary across families in line with their capacity tightness.")
     figure(doc, "fig_relgap_heatmap.png",
            "Per-instance expected-cost gap of each method relative to DF-CC*.",
@@ -641,7 +654,7 @@ def sec_results(doc):
          "They are largest where capacity is tight relative to demand, namely the dense "
          "urban families and the clustered benchmark classes, in which reserving the "
          "right capacity headroom prevents costly overflow; the learned service levels in "
-         "Figure 9 are correspondingly higher on these families. On the high-capacity "
+         "Figure 11 are correspondingly higher on these families. On the high-capacity "
          "random class, where a vehicle can absorb almost any realized demand, the "
          "stochastic machinery has little to exploit, the regime selection reverts to a "
          "recourse-only plan, and the proposed method is within noise of the best "
@@ -667,7 +680,7 @@ def sec_results(doc):
           caption="Ablation: per-instance mean change in expected cost when "
           "each component is removed from the full model.", col_widths=[3.6, 2.0])
     para(doc,
-         "Table 5 and Figure 7 isolate each component. Modeling recourse is the dominant "
+         "Table 5 and Figure 9 isolate each component. Modeling recourse is the dominant "
          "driver: removing recourse from the optimization increases expected cost by "
          "roughly ninety percent on average, exceeding two hundred percent on the "
          "high-capacity benchmark families where an emission-only optimizer packs "
@@ -691,7 +704,7 @@ def sec_results(doc):
          "setting the proposed method retains its advantage over the strong baselines, "
          "by roughly three to eleven percent over the scenario plan, and the advantage "
          "grows as the overload weight increases. The conclusions are therefore not an "
-         "artifact of a particular weight choice. Figure 8 reports the sensitivity.")
+         "artifact of a particular weight choice. Figure 10 reports the sensitivity.")
     figure(doc, "fig_sensitivity.png",
            "Sensitivity of the DF-CC* advantage to the overload and lateness "
            "recourse weights.", width_in=6.4)
