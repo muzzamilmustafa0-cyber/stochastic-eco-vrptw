@@ -292,16 +292,18 @@ def sec_problem(doc):
          "cannot exceed the speed that traffic permits, which links the eco-speed "
          "decision to realized congestion.")
     para(doc,
-         "Figure 1 illustrates the load- and speed-dependent fuel rate and its "
-         "proportional relationship to emissions, and Figure 2 illustrates the "
-         "eco-speed trade-off between travel time and fuel intensity that the speed "
-         "decision exploits.")
-    figure(doc, "fig_fuel_model.png",
-           "Load- and speed-dependent fuel rate (a) and its proportional relationship "
-           "to CO2-equivalent emissions (b).", width_in=6.2)
-    figure(doc, "fig_speed_levels.png",
-           "Eco-speed trade-off on a representative arc: a higher cruising speed reduces "
-           "travel time but raises the fuel rate per kilometer.", width_in=4.8)
+         "Figure 1 illustrates the load-dependent fuel rate and its proportional "
+         "relationship to emissions, and Figure 2 illustrates how the three eco-speed "
+         "levels are integrated across a depot-customer network, with low speed saving "
+         "fuel at the cost of time and high speed doing the reverse.")
+    figure(doc, "fig_draft_fuel.png",
+           "Fuel consumption as a function of vehicle load (a) and the proportional "
+           "relationship between fuel consumption and CO2-equivalent emissions (b).",
+           width_in=6.2)
+    figure(doc, "fig_draft_speed.png",
+           "Speed-level integration over a depot-customer network: each arc is traversed "
+           "at a low, medium, or high eco-speed, trading travel time against fuel rate.",
+           width_in=6.2)
 
     heading(doc, "3.2. Objective and feasibility under uncertainty", 2)
     para(doc,
