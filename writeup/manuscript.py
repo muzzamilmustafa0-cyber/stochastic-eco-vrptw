@@ -87,8 +87,8 @@ def sec_intro(doc):
          "A second limitation is more fundamental. Capacity and time windows remain "
          "non-negotiable in municipal waste collection and urban freight: vehicles "
          "cannot exceed their load capacities, and bins or customers must be serviced "
-         "within regulatory or contractual time windows (Munari et al., 2019; Yu, Wang "
-         "and Ma, 2019). Real operations, however, are not deterministic. The amount of "
+         "within regulatory or contractual time windows (Munari et al., 2019; Braysy "
+         "and Gendreau, 2005). Real operations, however, are not deterministic. The amount of "
          "waste accumulated in a bin varies from day to day, and the time required to "
          "traverse an arc depends on traffic that fluctuates by hour and location. When "
          "demand and travel time are treated as fixed, the resulting plan is optimistic: "
@@ -163,8 +163,8 @@ def sec_litreview(doc):
          "produces significant changes in energy outcomes, and subsequent extensions "
          "embedded discrete or continuous speed levels in time-window-constrained "
          "problems, with separate coefficients for full-load and empty-load consumption "
-         "(Demir, Bektas and Laporte, 2014; Fukasawa, Pessoa and Poggi, 2016; Zeng, Li "
-         "and Xiao, 2020).")
+         "(Demir, Bektas and Laporte, 2014; Fukasawa, Pessoa and Poggi, 2016; Xiao et "
+         "al., 2012).")
     para(doc,
          "Recent pollution-routing formulations account jointly for speed and load. "
          "Fukasawa et al. (2016, 2018) modeled fuel as a convex function of payload and "
@@ -178,8 +178,8 @@ def sec_litreview(doc):
          "(Schneider, Stenger and Goeke, 2014; Schiffer and Walther, 2018; Qin et al., "
          "2021), similarly assumes deterministic inputs. Multi-objective formulations "
          "balance emissions, distance, and service quality through weighted sums, "
-         "epsilon-constraint methods, or evolutionary search (Srivastava et al., 2021; "
-         "Qi et al., 2022).")
+         "epsilon-constraint methods, or evolutionary search (Jozefowiez, Semet and "
+         "Talbi, 2008).")
     para(doc,
          "On the solution side, exact methods based on branch-price-and-cut remain "
          "effective for structured medium-scale problems (Izadkhah et al., 2025), while "
@@ -195,6 +195,20 @@ def sec_litreview(doc):
          "controllers that select among low-level heuristics have been used for "
          "multi-echelon and freshness-constrained delivery (Xu et al., 2024).")
     para(doc,
+         "Uncertainty in routing has long been studied under the heading of the "
+         "stochastic vehicle routing problem, in which demand, travel time, or customer "
+         "presence are random (Gendreau, Laporte and Seguin, 1996; Oyola, Arntzen and "
+         "Woodruff, 2018). Two modeling devices recur. Chance constraints require a "
+         "constraint, such as capacity or a time window, to hold with a prescribed "
+         "probability, and recourse models the corrective action taken once uncertainty "
+         "is realized, so that a first-stage plan is evaluated by its expected cost plus "
+         "the expected cost of repair. Tail risk is commonly controlled through the "
+         "conditional value at risk, a coherent risk measure with a tractable convex "
+         "representation (Rockafellar and Uryasev, 2000). These devices are well "
+         "established for capacitated routing, but they have rarely been combined with a "
+         "load- and speed-dependent emission objective, which is precisely the setting in "
+         "which the realized emission cost, and not only feasibility, becomes uncertain.")
+    para(doc,
          "A more recent line couples machine learning with routing. The survey of "
          "Bogyrbayeva et al. (2024) organizes learning paradigms, solution structures, "
          "and models, distinguishing pure neural construction from learning that guides "
@@ -209,10 +223,14 @@ def sec_litreview(doc):
          "that learning can improve scalability and decision quality, but they largely "
          "predict inputs or actions in isolation from the downstream objective. "
          "Decision-focused learning, which trains a predictor against the cost of the "
-         "decisions it induces rather than against forecast error, has so far been "
-         "developed mainly for problems whose uncertainty enters the objective; its use "
+         "decisions it induces rather than against forecast error (Elmachtoub and "
+         "Grigas, 2022; Bertsimas and Kallus, 2020), has so far been developed mainly "
+         "for problems whose uncertainty enters the objective as a linear cost; its use "
          "for constraint-side uncertainty in routing, such as capacity and time windows, "
-         "remains largely unexplored.")
+         "remains largely unexplored. The present study brings these threads together: a "
+         "stochastic emission objective with chance-constrained time windows and "
+         "capacity recourse, a learned prediction layer, and a decision-focused planning "
+         "rule whose loss is the realized routing cost rather than forecast error.")
     para(doc,
          "Table 1 positions representative emission- and uncertainty-aware routing "
          "studies along four axes: whether emissions are load- and speed-dependent, "
@@ -402,6 +420,18 @@ def sec_method(doc):
          "lowest training expected cost is retained for out-of-sample evaluation. The "
          "method is therefore never worse than the best standard plan and improves on "
          "the instances where the learned service level is decisive.")
+    para(doc,
+         "Concretely, the parameter vector theta is fit by a population evolution "
+         "strategy. From the current best vector the strategy samples a small population "
+         "of perturbed candidates, evaluates each by constructing and optimizing routes "
+         "under its induced service levels and scoring the result on a held-out scenario "
+         "subset, and moves toward the best candidate while adapting the perturbation "
+         "scale; a restart widens the perturbation when progress stalls. Only a handful "
+         "of features and a single linear layer are learned, which keeps the parameter "
+         "count low and the strategy stable, and the held-out scoring is what makes the "
+         "objective decision-focused rather than a forecast-accuracy surrogate. The "
+         "feature standardization, the service-level bounds, and the population size are "
+         "fixed across all instances, so no per-instance tuning is involved.")
 
     heading(doc, "4.4. Scenario-aware Hybrid Guided Local Search", 2)
     para(doc,
@@ -492,6 +522,21 @@ def sec_setup(doc):
          "overload probability, expected emissions, and fleet size are reported "
          "alongside. Statistical comparisons use the paired Wilcoxon signed-rank test "
          "with Holm correction across baselines and the Friedman test across methods.")
+    para(doc,
+         "All methods share a common cheapest-insertion construction, the same "
+         "neighborhood operators, and an identical iteration budget per instance; the "
+         "only differences are the planning quantities each method reserves and whether "
+         "the search objective includes recourse and a learned capacity constraint. The "
+         "scenario set is partitioned so that planning uses one subset and scoring uses a "
+         "disjoint subset, and the reported metrics are averaged over three seeds to "
+         "account for the stochasticity of the search and of the evolution-strategy "
+         "training. For each solution we report expected total cost in liters-equivalent, "
+         "expected emissions obtained through the conversion factor, the conditional value "
+         "at risk of cost at the ninety-percent level, the empirical probability that a "
+         "vehicle overflows its capacity, and the number of vehicles. Reporting cost, "
+         "tail risk, and overflow together is deliberate: a method can appear attractive "
+         "on expected cost while exposing the operator to frequent overflow, and the "
+         "joint view prevents that bias.")
 
 
 def _fmt(x, d=1):
@@ -589,6 +634,22 @@ def sec_results(doc):
     figure(doc, "fig_relgap_heatmap.png",
            "Per-instance expected-cost gap of each method relative to DF-CC*.",
            width_in=5.6)
+    para(doc,
+         "The gains are not uniform across families, and the pattern is informative. "
+         "They are largest where capacity is tight relative to demand, namely the dense "
+         "urban families and the clustered benchmark classes, in which reserving the "
+         "right capacity headroom prevents costly overflow; the learned service levels in "
+         "Figure 9 are correspondingly higher on these families. On the high-capacity "
+         "random class, where a vehicle can absorb almost any realized demand, the "
+         "stochastic machinery has little to exploit, the regime selection reverts to a "
+         "recourse-only plan, and the proposed method is within noise of the best "
+         "baseline. This is the single family on which it does not lead, and it is a "
+         "boundary case in which no capacity-oriented method can help rather than a "
+         "failure of the approach. The deterministic and point-forecast plans behave "
+         "almost identically throughout, confirming that a single point prediction adds "
+         "nothing over the mean once the objective ignores uncertainty, whereas the "
+         "robust plan is consistently dominated because its worst-case sizing inflates "
+         "both fleet and emissions.")
 
     heading(doc, "7.3. Ablation", 2)
     ab = pd.read_csv(os.path.join(RES, "ablation.csv"))
@@ -635,6 +696,20 @@ def sec_results(doc):
     figure(doc, "fig_learned_planning.png",
            "Learned per-node capacity service level by instance family.",
            width_in=5.6)
+
+    heading(doc, "7.5. Runtime", 2)
+    para(doc,
+         "The scenario-aware baselines solve an instance in about three seconds, whereas "
+         "the proposed method requires on the order of six minutes, almost all of which "
+         "is the evolution-strategy training that repeatedly constructs and scores "
+         "candidate plans. For municipal collection planning, which is performed offline "
+         "and updated infrequently, this cost is immaterial relative to the operating "
+         "savings, and the learned service-level model can in principle be reused across "
+         "planning cycles without retraining. The deployed plan itself is produced by a "
+         "single optimization pass and is no more expensive to execute than any other "
+         "plan. Where faster turnaround is required, the regime selection can be "
+         "restricted to the recourse-only and learned chance-constrained plans, which "
+         "captures most of the benefit at roughly half the training cost.")
 
 
 def sec_case(doc):
@@ -782,15 +857,27 @@ REFS = [
     "Demir, E., Bektas, T., & Laporte, G. (2014). A review of recent research on green "
     "road freight transportation. European Journal of Operational Research, 237(3), "
     "775-793.",
+    "Bertsimas, D., & Kallus, N. (2020). From predictive to prescriptive analytics. "
+    "Management Science, 66(3), 1025-1044.",
+    "Braysy, O., & Gendreau, M. (2005). Vehicle routing problem with time windows, Part "
+    "I: Route construction and local search algorithms. Transportation Science, 39(1), "
+    "104-118.",
+    "Elmachtoub, A. N., & Grigas, P. (2022). Smart 'predict, then optimize'. Management "
+    "Science, 68(1), 9-26.",
     "Fukasawa, R., He, Q., & Song, Y. (2016). A disjunctive convex programming approach "
     "to the pollution-routing problem. Transportation Research Part B, 94, 61-79.",
     "Fukasawa, R., He, Q., & Song, Y. (2018). A branch-cut-and-price algorithm for the "
     "energy minimization vehicle routing problem. Transportation Science, 52(1), 23-37.",
-    "Gutierrez-Padilla, A., et al. (2021). Eco-speed and payload-sensitive routing under "
-    "time windows. Computers & Operations Research.",
+    "Gendreau, M., Laporte, G., & Seguin, R. (1996). Stochastic vehicle routing. "
+    "European Journal of Operational Research, 88(1), 3-12.",
+    "Gutierrez-Padilla, C., et al. (2021). A novel mathematical model for a discrete "
+    "speed pollution routing problem with time windows in a Colombian context. "
+    "IFAC-PapersOnLine, 54(2), 229-235.",
     "Izadkhah, A., Wang, A., Lainez-Aguirre, J. M., Pinto, J. M., & Gounaris, C. E. "
     "(2025). The periodic vehicle routing problem with multi-day trips. Transportation "
     "Research Part E.",
+    "Jozefowiez, N., Semet, F., & Talbi, E.-G. (2008). Multi-objective vehicle routing "
+    "problems. European Journal of Operational Research, 189(2), 293-309.",
     "Kerscher, C., & Minner, S. (2025). Decompose-route-improve framework for solving "
     "large-scale vehicle routing problems with time windows. Transportation Research "
     "Part E.",
@@ -798,14 +885,18 @@ REFS = [
     "logistics using uncrewed electric aerial and ground vehicles: A two-echelon "
     "location-routing problem with resource-constrained demand allocation and time "
     "windows. Transportation Research Part E.",
-    "Lai, D., et al. (2024). Pollution-routing with road grade, speed, and payload. "
-    "Transportation Research Part E.",
+    "Lai, D., Costa, Y. J., Demir, E., Florio, A. M., & Van Woensel, T. (2024). The "
+    "pollution-routing problem with speed optimization and uneven topography. Computers "
+    "& Operations Research, 165, 106557.",
     "Liu, Y., Luo, Z., Liu, Z., Shi, J., & Cheng, G. (2019). Cooperative routing problem "
     "for ground vehicle and unmanned aerial vehicle: The application on intelligence, "
     "surveillance, and reconnaissance missions. IEEE Access, 7, 63504-63518.",
     "Moghdani, R., Salimifard, K., & Naderi, B. (2021). The green vehicle routing "
     "problem: A systematic literature review. Journal of Cleaner Production, 279, "
     "123691.",
+    "Oyola, J., Arntzen, H., & Woodruff, D. L. (2018). The stochastic vehicle routing "
+    "problem, a literature review, part I: Models. EURO Journal on Transportation and "
+    "Logistics, 7(3), 193-221.",
     "Mohammed, M. A., Abd Ghani, M. K., Hamed, R. I., Mostafa, S. A., Ibrahim, D. A., "
     "Jameel, H. K., & Alallah, A. H. (2017). Solving vehicle routing problem by using "
     "improved K-nearest neighbor algorithm for best solution. Journal of Computational "
@@ -813,10 +904,11 @@ REFS = [
     "Munari, P., Moreno, A., De La Vega, J., Alem, D., Gondzio, J., & Morabito, R. "
     "(2019). The robust vehicle routing problem with time windows: Compact formulation "
     "and branch-price-and-cut method. Transportation Science, 53(4), 1043-1066.",
-    "Qi, R., Li, J., et al. (2022). Reinforcement-learning-assisted optimization for "
-    "green vehicle routing. (As cited in the green-VRP literature.)",
-    "Qin, H., et al. (2021). The electric vehicle routing problem with time windows: "
-    "Models and solution approaches. (As cited in the EVRPTW literature.)",
+    "Qin, H., Su, X., Ren, T., & Luo, Z. (2021). A review on the electric vehicle "
+    "routing problems: Variants and algorithms. Frontiers of Engineering Management, "
+    "8(3), 370-389.",
+    "Rockafellar, R. T., & Uryasev, S. (2000). Optimization of conditional value-at-risk. "
+    "Journal of Risk, 2(3), 21-42.",
     "Ropke, S., & Pisinger, D. (2006). An adaptive large neighborhood search heuristic "
     "for the pickup and delivery problem with time windows. Transportation Science, "
     "40(4), 455-472.",
@@ -827,8 +919,6 @@ REFS = [
     "500-520.",
     "Solomon, M. M. (1987). Algorithms for the vehicle routing and scheduling problems "
     "with time window constraints. Operations Research, 35(2), 254-265.",
-    "Srivastava, G., et al. (2021). Multi-objective green vehicle routing. (As cited in "
-    "the multi-objective VRP literature.)",
     "Stamadianos, T., Taxidou, A., Marinaki, M., & Marinakis, Y. (2024). Swarm "
     "intelligence and nature inspired algorithms for solving vehicle routing problems: "
     "A survey. Operational Research, 24, 47.",
@@ -850,10 +940,9 @@ REFS = [
     "hyper-heuristic algorithm for a two-echelon vehicle routing problem with "
     "dual-customer satisfaction in community group-buying. Transportation Research "
     "Part E.",
-    "Yu, Y., Wang, S., & Ma, H. (2019). Optimization of urban distribution routing under "
-    "capacity and time-window constraints. (As cited in the VRPTW literature.)",
-    "Zeng, Z., Li, X., & Xiao, Y. (2020). Load-dependent fuel consumption models for "
-    "green vehicle routing. (As cited in the green-VRP literature.)",
+    "Xiao, Y., Zhao, Q., Kaku, I., & Xu, Y. (2012). Development of a fuel consumption "
+    "optimization model for the capacitated vehicle routing problem. Computers & "
+    "Operations Research, 39(7), 1419-1431.",
 ]
 
 
