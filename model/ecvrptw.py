@@ -20,11 +20,15 @@ RHOQ = 0.50            # full-load  L/km
 PHI = np.array([0.90, 1.00, 1.18])    # speed factor low/med/high (faster -> more fuel/km)
 XI = 2.36             # kg CO2e per litre (manuscript)
 
-# recourse unit costs (litres-equivalent, so everything is comparable in fuel terms)
-C_LATE = 0.05         # per minute of lateness
-C_OVER = 2.00         # per m3 of overload (forces a depot return)
-C_MISS = 50.0         # per unserved node
+# recourse parameters (litres-equivalent where monetised, so all terms are
+# commensurable with fuel). The emergency depot return is SIMULATED, not priced:
+# its distance, fuel, and time are added physically to the route.
+C_LATE = 0.05         # per minute of post-recourse lateness
+C_RET = 2.00          # fixed cost per emergency return (labour/administration)
+C_MISS = 50.0         # per deferred or unserved customer
 C_INFEAS_SPEED = 0.5  # per arc using an infeasible eco-speed (soft penalty)
+UNLOAD_MIN = 10.0     # depot unload time during an emergency return (minutes)
+DEPOT_SPEED = 1       # speed level used on emergency depot legs (medium)
 
 
 class Instance:
@@ -78,87 +82,128 @@ def _arc_fuel(d_km, loadfrac, s_idx):
 
 def evaluate(inst: Instance, sc: Scenarios, routes, speeds, beta=0.0, alpha=0.9,
              use_mean_demand=False, mean_tt=None,
-             w_late=None, w_over=None, w_miss=None, w_infeas=None):
-    # default to current module-level weights at call time (enables sensitivity sweeps)
-    w_late = C_LATE if w_late is None else w_late
-    w_over = C_OVER if w_over is None else w_over
-    w_miss = C_MISS if w_miss is None else w_miss
-    w_infeas = C_INFEAS_SPEED if w_infeas is None else w_infeas
+             w_late=None, w_ret=None, w_miss=None, w_infeas=None,
+             return_z=False):
     """
-    Vectorised scenario-aware evaluation.
+    Vectorised scenario-aware evaluation with SIMULATED recourse.
+
+    Recourse timeline (second stage, per scenario): the route and planned speeds are
+    fixed. Service proceeds sequentially. On arrival at customer j, if the realised
+    demand q_j(omega) does not fit the residual capacity, the vehicle performs an
+    emergency depot round trip from j (travel j->0 loaded, unload for UNLOAD_MIN,
+    travel 0->j empty), then serves j. If a planned speed level is not achievable,
+    the realised travel time already reflects the lower achievable speed. Service
+    that cannot start before the shift horizon is deferred at a penalty. Lateness
+    within the horizon is penalised per minute.
 
     routes  : list of routes (each a list of customer indices, no depot)
-    speeds  : list of per-arc speed-level index lists; len(speeds[r]) == len(routes[r])+1
-    beta    : CVaR weight (0 = expected only)
+    speeds  : per-arc speed-level index lists; len(speeds[r]) == len(routes[r])+1
+    beta    : CVaR weight in the fitness (0 = expected cost only)
     alpha   : CVaR level
-    use_mean_demand : if True, evaluate deterministic mean-value model (D-HGLS baseline)
-    mean_tt : optional [N,N,3] travel-time to use instead of scenarios (for PTO/det.)
+    use_mean_demand : evaluate under mean demand (deterministic planning view)
+    mean_tt : optional [N,N,3] travel time instead of scenarios (deterministic view)
+    return_z: also return the per-scenario cost vector (for DRO / calibration)
 
-    Returns dict with expected fuel/emission/recourse, CVaR, reliability metrics, fitness.
+    Reported failure metrics are distinguished per roadmap:
+      P_trigger  : probability that at least one emergency return occurs (route failure)
+      E_returns  : expected number of emergency returns per day
+      E_return_km: expected extra distance driven due to returns
+      P_late     : probability of any post-recourse lateness
+      P_defer    : probability that at least one customer is deferred
     """
+    # default to module-level weights at call time (enables sensitivity sweeps)
+    w_late = C_LATE if w_late is None else w_late
+    w_ret = C_RET if w_ret is None else w_ret
+    w_miss = C_MISS if w_miss is None else w_miss
+    w_infeas = C_INFEAS_SPEED if w_infeas is None else w_infeas
+
     S, N = sc.S, inst.N
-    q = inst.demand_base[None, :].repeat(S, 0) if use_mean_demand else sc.q       # [S,N]
     if use_mean_demand:
         q = sc.q.mean(0)[None, :].repeat(S, 0)
+    else:
+        q = sc.q
+    depot = inst.depot
+    shift_end = inst.tw[depot, 1]
 
-    fuel = np.zeros(S); late = np.zeros(S); over = np.zeros(S)
-    infeas = np.zeros(S); miss = np.zeros(S)
-    served = np.zeros(N, bool); served[inst.depot] = True
+    fuel = np.zeros(S); late = np.zeros(S); infeas = np.zeros(S)
+    returns = np.zeros(S); return_km = np.zeros(S); defer = np.zeros(S)
+    served = np.zeros(N, bool); served[depot] = True
+
+    def _tt(i, j, s_idx):
+        if mean_tt is not None:
+            return np.full(S, mean_tt[i, j, s_idx])
+        return sc.tt[:, i, j, s_idx]
 
     for r, route in enumerate(routes):
         if len(route) == 0:
             continue
         sp = speeds[r]
-        path = [inst.depot] + list(route) + [inst.depot]
-        load = np.zeros(S)                 # current load per scenario (pickup grows)
-        t = np.full(S, inst.tw[inst.depot, 0])   # depart depot at window open
-        route_q = q[:, route]              # [S, len(route)]
-        total_route_q = route_q.sum(1)     # for capacity check
+        path = [depot] + list(route) + [depot]
+        load = np.zeros(S)
+        t = np.full(S, float(inst.tw[depot, 0]))
         for k in range(1, len(path)):
             i, j = path[k-1], path[k]
             s_idx = sp[k-1]
-            # travel time
-            if mean_tt is not None:
-                ttk = np.full(S, mean_tt[i, j, s_idx])
-            else:
-                ttk = sc.tt[:, i, j, s_idx]
-            # eco-speed feasibility (soft)
             infeas += (1 - sc.feas[:, i, j, s_idx])
-            # load fraction on this arc (load BEFORE servicing j)
             loadfrac = np.clip(load / inst.cap, 0, 1)
             fuel += _arc_fuel(inst.D[i, j], loadfrac, s_idx)
-            # arrive, wait to window open, service
-            t = t + ttk
-            if j != inst.depot:
-                served[j] = True
-                t = np.maximum(t, inst.tw[j, 0])
-                late += np.maximum(0.0, t - inst.tw[j, 1])
-                t = t + inst.service[j]
+            t = t + _tt(i, j, s_idx)
+            if j == depot:
+                continue
+            served[j] = True
+            # --- emergency return recourse: q_j does not fit residual capacity ---
+            trig = (load + q[:, j] > inst.cap + 1e-9)
+            if trig.any():
+                d_leg = inst.D[j, depot]
+                lf = np.clip(load / inst.cap, 0, 1)
+                # loaded leg j->0 + empty leg 0->j, at the depot speed level
+                extra_fuel = (_arc_fuel(d_leg, lf, DEPOT_SPEED)
+                              + _arc_fuel(inst.D[depot, j], 0.0, DEPOT_SPEED))
+                extra_t = (_tt(j, depot, DEPOT_SPEED) + _tt(depot, j, DEPOT_SPEED)
+                           + UNLOAD_MIN)
+                fuel += np.where(trig, extra_fuel, 0.0)
+                t = t + np.where(trig, extra_t, 0.0)
+                return_km += np.where(trig, d_leg + inst.D[depot, j], 0.0)
+                returns += trig
+                load = np.where(trig, 0.0, load)
+            # --- service, deferment, lateness (post-recourse) ---
+            start = np.maximum(t, inst.tw[j, 0])
+            dfr = (start > shift_end + 1e-9)
+            if dfr.any():
+                defer += dfr
+                # deferred customers are skipped: no service time, no pickup
+                late += np.where(dfr, 0.0, np.maximum(0.0, start - inst.tw[j, 1]))
+                t = np.where(dfr, t, start + inst.service[j])
+                load = np.where(dfr, load, load + q[:, j])
+            else:
+                late += np.maximum(0.0, start - inst.tw[j, 1])
+                t = start + inst.service[j]
                 load = load + q[:, j]
-        # capacity overload recourse (load can exceed Q under high-demand scenarios)
-        over += np.maximum(0.0, total_route_q - inst.cap)
 
-    # unserved nodes (customers not in any route)
-    miss[:] = float((~served).sum())
-
+    unrouted = float((~served).sum())
     emission = XI * fuel
-    recourse = w_late * late + w_over * over + w_miss * miss + w_infeas * infeas
-    cost = fuel + recourse                      # litres-equivalent total
+    recourse = (w_late * late + w_ret * returns + w_miss * (defer + unrouted)
+                + w_infeas * infeas)
+    cost = fuel + recourse
     z = cost
-    cvar = _cvar(z, alpha) if beta > 0 else 0.0
-    fitness = z.mean() + beta * cvar
+    cvar = _cvar(z, alpha)
+    fitness = z.mean() + beta * cvar if beta > 0 else z.mean()
 
-    return {
+    out = {
         "fitness": float(fitness),
         "E_fuel": float(fuel.mean()), "E_emission": float(emission.mean()),
         "E_recourse": float(recourse.mean()), "E_cost": float(cost.mean()),
-        "CVaR_cost": float(cvar) if beta > 0 else float(_cvar(z, alpha)),
-        "worst_cost": float(z.max()),
+        "CVaR_cost": float(cvar), "worst_cost": float(z.max()),
+        "P_trigger": float((returns > 0).mean()), "E_returns": float(returns.mean()),
+        "E_return_km": float(return_km.mean()),
         "P_late": float((late > 1e-6).mean()), "E_late_min": float(late.mean()),
-        "P_overload": float((over > 1e-6).mean()), "E_overload_m3": float(over.mean()),
-        "missed_nodes": float(miss.mean()),
+        "P_defer": float((defer > 0).mean()), "E_deferred": float(defer.mean()),
+        "unrouted": unrouted,
         "infeas_speed_arcs": float(infeas.mean()),
     }
+    if return_z:
+        out["z"] = z
+    return out
 
 
 def _cvar(z, alpha):
