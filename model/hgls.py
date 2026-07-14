@@ -132,17 +132,30 @@ def _cap_ok(routes, cap_demand, cap):
 
 def hgls(inst: E.Instance, sc: E.Scenarios, routes, speeds, max_iter=2000, no_improve=300,
          beta=0.5, alpha=0.9, lam=0.1, seed=0, eval_kwargs=None, verbose=False,
-         cap_demand=None):
+         cap_demand=None, fitness_fn=None, time_limit=None, trace=None):
     """cap_demand: optional [N] planning demand enforced as a hard per-route capacity
     constraint throughout the search (contextual chance constraint). If None, capacity
-    is handled softly via recourse in the objective."""
+    is handled softly via recourse in the objective.
+    fitness_fn : optional callable(routes, speeds) -> float replacing the default
+                 scenario-mean objective (used for DRO-blended search).
+    time_limit : optional wall-clock budget in seconds (equal-time comparisons);
+                 max_iter still caps the run.
+    trace      : optional list; (elapsed_s, best_fitness) is appended on improvement
+                 (anytime curves)."""
+    import time as _time
+    t0 = _time.perf_counter()
     rng = np.random.default_rng(seed)
     eval_kwargs = eval_kwargs or {}
     penalty = np.zeros((inst.N, inst.N))
     enforce_cap = cap_demand is not None
 
-    def true_fit(R, Sp):
-        return E.evaluate(inst, sc, R, Sp, beta=beta, alpha=alpha, **eval_kwargs)["fitness"]
+    if fitness_fn is not None:
+        def true_fit(R, Sp):
+            return fitness_fn(R, Sp)
+    else:
+        def true_fit(R, Sp):
+            return E.evaluate(inst, sc, R, Sp, beta=beta, alpha=alpha,
+                              **eval_kwargs)["fitness"]
 
     def pen_fit(R, Sp):
         p = sum(penalty[i, j] for i, j in _arcs(R, inst.depot))
@@ -151,10 +164,14 @@ def hgls(inst: E.Instance, sc: E.Scenarios, routes, speeds, max_iter=2000, no_im
     cur_r, cur_s = _clone(routes, speeds)
     cur_pf = pen_fit(cur_r, cur_s)
     best_r, best_s = _clone(cur_r, cur_s); best_tf = true_fit(best_r, best_s)
+    if trace is not None:
+        trace.append((0.0, best_tf))
     scores = np.ones(len(OPS)); counts = np.ones(len(OPS))
     stale = 0
 
     for it in range(max_iter):
+        if time_limit is not None and _time.perf_counter() - t0 > time_limit:
+            break
         w = scores / counts; w = w / w.sum()
         oi = rng.choice(len(OPS), p=w)
         nr, ns = OPS[oi](cur_r, cur_s, rng)
@@ -169,6 +186,8 @@ def hgls(inst: E.Instance, sc: E.Scenarios, routes, speeds, max_iter=2000, no_im
             tf = true_fit(cur_r, cur_s)
             if tf < best_tf - 1e-9:
                 best_r, best_s = _clone(cur_r, cur_s); best_tf = tf; stale = 0
+                if trace is not None:
+                    trace.append((_time.perf_counter() - t0, best_tf))
             else:
                 stale += 1
         else:
