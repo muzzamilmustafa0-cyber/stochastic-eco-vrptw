@@ -1,0 +1,7 @@
+family,n_cust,S,exact_cost,hgls_cost,gap_pct,explored,optimal,exact_secs
+nyc_manhattan,8,10,6.1265,6.1265,0.0,100864,True,30.5
+nyc_queens,8,10,14.9871,14.9871,0.0,63135,True,14.8
+dublin_real,8,10,4.4987,4.4987,0.0,13060,True,4.7
+peshawar_real,8,10,10.4756,10.4756,0.0,67533,True,19.5
+solomon_c101,8,10,18.184,18.184,0.0,2856,True,1.3
+solomon_rc101,8,10,40.3071,40.3071,0.0,52727,True,14.9
