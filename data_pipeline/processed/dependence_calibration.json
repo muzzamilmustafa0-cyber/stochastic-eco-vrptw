@@ -1,0 +1,10 @@
+{
+  "rho_demand_intraday": 0.0917,
+  "sigma_day_effect_log": 0.0958,
+  "sigma_idiosyncratic_log": 0.3014,
+  "n_route_days": 137170,
+  "n_days": 1778,
+  "sigma_traffic_common_log": 0.1491,
+  "n_date_hour_cells": 2233,
+  "note": "rho_demand = share of log-demand variance common to all units on the same day (Austin). sigma_traffic = across-date std of log median achievable speed at fixed hour (NYC TLC)."
+}
