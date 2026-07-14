@@ -63,10 +63,15 @@ def _arclut(family):
     return _lut_cache[family]
 
 
-def generate(family, replicate, S=S_TOTAL):
-    """Generate the scenario set for (family, replicate). Deterministic."""
+def generate(family, replicate, S=S_TOTAL, rho_d=None, sig_t=None):
+    """Generate the scenario set for (family, replicate). Deterministic.
+    rho_d / sig_t override the calibrated dependence parameters (ablation)."""
+    RHO = RHO_D if rho_d is None else float(rho_d)
+    SGT = SIG_T if sig_t is None else float(sig_t)
     meta = _meta(family)
-    rng = np.random.default_rng(abs(hash((family, int(replicate)))) % (2**32))
+    import zlib
+    seed = zlib.crc32(f"{family}|{int(replicate)}".encode())   # process-independent
+    rng = np.random.default_rng(seed)
     N = meta["n_nodes"]
     D = np.array(meta["distance_km"], float)
     base = np.array(meta["base_demand_m3"], float)
@@ -78,8 +83,8 @@ def generate(family, replicate, S=S_TOTAL):
     mu = np.where(base > 0, np.log(np.maximum(base, 1e-9)) - 0.5 * sig**2, -np.inf)
     z_day = rng.standard_normal(S)[:, None]
     z_i = rng.standard_normal((S, N))
-    q = np.exp(mu[None, :] + sig[None, :] * (np.sqrt(RHO_D) * z_day
-                                             + np.sqrt(1 - RHO_D) * z_i))
+    q = np.exp(mu[None, :] + sig[None, :] * (np.sqrt(RHO) * z_day
+                                             + np.sqrt(1 - RHO) * z_i))
     q[:, meta["depot"]] = 0.0
     q[np.isinf(mu)[None, :].repeat(S, 0)] = 0.0
 
@@ -93,7 +98,7 @@ def generate(family, replicate, S=S_TOTAL):
         reg = PROFILE[family]
     lo, hi = reg["shift"]
     hours = rng.integers(lo, hi + 1, S)
-    w_day = np.exp(SIG_T * rng.standard_normal(S) - 0.5 * SIG_T**2)
+    w_day = np.exp(SGT * rng.standard_normal(S) - 0.5 * SGT**2)
 
     tt = np.empty((S, N, N, 3), np.float32)
     feas = np.empty((S, N, N, 3), np.int8)

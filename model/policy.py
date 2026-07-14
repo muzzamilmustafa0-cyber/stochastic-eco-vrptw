@@ -45,9 +45,23 @@ def plan_demand(theta, inst, sc_tr, kappa=1.0):
     return qp * kappa, tau
 
 
+def construct(inst, sc_tr, qp, ortools_s=0, seed=0):
+    """Shared constructor: OR-Tools when a time budget is given, else greedy."""
+    if ortools_s > 0:
+        try:
+            from . import external as XT
+            r = XT.ortools_routes(inst, qp, sc_tr.tt.mean(0),
+                                  time_limit_s=ortools_s, seed=seed)
+            if r:
+                return r, [[1] * (len(x) + 1) for x in r]
+        except Exception:
+            pass
+    return C.nearest_feasible(inst, sc_tr, demand=qp, tt=sc_tr.tt.mean(0))
+
+
 def _build_plan(inst, sc_tr, qp, budget_iter, seed, rho=None, lam=R.LAM_DEFAULT,
-                time_limit=None, trace=None):
-    r0, s0 = C.nearest_feasible(inst, sc_tr, demand=qp, tt=sc_tr.tt.mean(0))
+                time_limit=None, trace=None, ortools_s=0):
+    r0, s0 = construct(inst, sc_tr, qp, ortools_s=ortools_s, seed=seed)
     fit = None
     if rho is not None:
         fit = R.robust_fitness_fn(inst, sc_tr, rho, lam)
@@ -91,13 +105,17 @@ def train_global(train_insts, iters=30, pop=6, sigma0=0.7, seed=0,
     return theta, hist
 
 
-def deploy(inst, sc_tr, sc_ca, theta, budget_iter=1500, seed=0, eps=0.20,
-           lam=R.LAM_DEFAULT, time_limit=None):
+def deploy(inst, sc_tr, sc_ca, theta, seed=0, eps=0.20, lam=R.LAM_DEFAULT,
+           time_limit=15.0, ortools_s=5, budget_iter=10**9):
     """Full deployment with conformal pass, DRO, and safeguarded selection.
-    Returns (routes, speeds, info)."""
-    # reference plan for rho calibration and conformal scores
+    Both the learned plan and the recourse-only comparator get the same
+    constructor and the same wall-clock refinement budget. Returns
+    (routes, speeds, info)."""
+    # reference plan for rho calibration and conformal scores (short budget)
     qp0, tau = plan_demand(theta, inst, sc_tr)
-    r_ref, s_ref, _ = _build_plan(inst, sc_tr, qp0, max(budget_iter // 3, 300), seed)
+    r_ref, s_ref, _ = _build_plan(inst, sc_tr, qp0, budget_iter, seed,
+                                  time_limit=max(time_limit / 3, 3.0),
+                                  ortools_s=ortools_s)
     z_tr = E.evaluate(inst, sc_tr, r_ref, s_ref, return_z=True)["z"]
     z_ca = E.evaluate(inst, sc_ca, r_ref, s_ref, return_z=True)["z"]
     rho = R.calibrate_rho(z_tr, z_ca)
@@ -106,13 +124,13 @@ def deploy(inst, sc_tr, sc_ca, theta, budget_iter=1500, seed=0, eps=0.20,
     qp, _ = plan_demand(theta, inst, sc_tr, kappa=kappa)
     qp = np.minimum(qp, inst.cap)                     # a node cannot exceed a truck
     r_df, s_df, _ = _build_plan(inst, sc_tr, qp, budget_iter, seed, rho=rho,
-                                lam=lam, time_limit=time_limit)
-    # recourse-only comparator (same budget)
+                                lam=lam, time_limit=time_limit, ortools_s=ortools_s)
+    # recourse-only comparator (same constructor, same budget)
     q75 = np.quantile(sc_tr.q, 0.75, axis=0)
-    r_sa0, s_sa0 = C.nearest_feasible(inst, sc_tr, demand=q75, tt=sc_tr.tt.mean(0))
+    r_sa0, s_sa0 = construct(inst, sc_tr, q75, ortools_s=ortools_s, seed=seed)
     r_sa, s_sa, _ = H.hgls(inst, sc_tr, r_sa0, s_sa0, max_iter=budget_iter,
-                           no_improve=max(budget_iter // 3, 100), beta=0.0,
-                           seed=seed, time_limit=time_limit)
+                           no_improve=10**9, beta=0.0, seed=seed,
+                           time_limit=time_limit)
     # safeguarded selection on CALIBRATION scenarios
     c_df = E.evaluate(inst, sc_ca, r_df, s_df)["E_cost"]
     c_sa = E.evaluate(inst, sc_ca, r_sa, s_sa)["E_cost"]
