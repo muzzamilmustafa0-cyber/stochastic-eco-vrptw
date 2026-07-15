@@ -29,3 +29,6 @@ _*.txt
 
 # manuscript build artifacts
 writeup/eq/
+
+# manuscript build pipeline (kept local only)
+writeup/
