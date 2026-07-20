@@ -20,8 +20,11 @@ from .eco_ablation import run_policy, FAMS, REPS
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "results2", "eco_diag.csv")
-FIELDS = ["family", "rep", "policy", "train_obj", "test_cost", "secs"]
+FIELDS = ["family", "rep", "seed", "policy", "train_obj", "test_cost", "secs"]
 BIG = 10**9
+# Same reason as in eco_ablation: wall-clock budgets make a single run
+# non-reproducible, so every configuration is repeated over seeds.
+SEEDS = [0, 1, 2, 3, 4]
 
 
 def opt_full_long(inst, tr, seed=0, budget=45.0):
@@ -37,7 +40,7 @@ def main():
     if os.path.exists(OUT):
         import pandas as pd
         for _, r in pd.read_csv(OUT).iterrows():
-            done.add((r["family"], int(r["rep"]), r["policy"]))
+            done.add((r["family"], int(r["rep"]), int(r["seed"]), r["policy"]))
     new = not os.path.exists(OUT)
     f = open(OUT, "a", newline=""); w = csv.DictWriter(f, fieldnames=FIELDS)
     if new:
@@ -45,23 +48,29 @@ def main():
     for fam in FAMS:
         for rep in REPS:
             inst, tr, ca, te = SL.load_replicate(fam, rep)
-            jobs = [("fixed_low", lambda: run_policy("fixed_low", inst, tr)),
-                    ("opt_full", lambda: run_policy("opt_full", inst, tr)),
-                    ("opt_full_3x", lambda: opt_full_long(inst, tr))]
-            for name, fn in jobs:
-                if (fam, rep, name) in done:
-                    continue
-                t0 = time.perf_counter()
-                r, s = fn()
-                tro = E.evaluate(inst, tr, r, s)["fitness"]
-                tec = E.evaluate(inst, te, r, s)["E_cost"]
-                w.writerow(dict(family=fam, rep=rep, policy=name,
-                                train_obj=round(float(tro), 3),
-                                test_cost=round(float(tec), 3),
-                                secs=round(time.perf_counter() - t0, 1)))
-                f.flush()
-                print(f"[diag] {fam} r{rep} {name}: train={tro:.1f} "
-                      f"test={tec:.1f}", flush=True)
+            for sd in SEEDS:
+                jobs = [
+                    ("fixed_low",
+                     lambda s=sd: run_policy("fixed_low", inst, tr, seed=s)),
+                    ("opt_full",
+                     lambda s=sd: run_policy("opt_full", inst, tr, seed=s)),
+                    ("opt_full_3x",
+                     lambda s=sd: opt_full_long(inst, tr, seed=s)),
+                ]
+                for name, fn in jobs:
+                    if (fam, rep, sd, name) in done:
+                        continue
+                    t0 = time.perf_counter()
+                    r, s = fn()
+                    tro = E.evaluate(inst, tr, r, s)["fitness"]
+                    tec = E.evaluate(inst, te, r, s)["E_cost"]
+                    w.writerow(dict(family=fam, rep=rep, seed=sd, policy=name,
+                                    train_obj=round(float(tro), 3),
+                                    test_cost=round(float(tec), 3),
+                                    secs=round(time.perf_counter() - t0, 1)))
+                    f.flush()
+                    print(f"[diag] {fam} r{rep} s{sd} {name}: "
+                          f"train={tro:.1f} test={tec:.1f}", flush=True)
     f.close()
     print("ECO DIAG COMPLETE", flush=True)
 

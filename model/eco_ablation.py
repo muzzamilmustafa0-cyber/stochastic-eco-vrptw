@@ -23,7 +23,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES = os.path.join(ROOT, "results2")
 OUT = os.path.join(RES, "eco_ablation.csv")
 FAMS = ["nyc_manhattan", "peshawar_real", "solomon_c101", "solomon_r202"]
-REPS = [1, 2]
+# All five operational replicates per family. With only two replicates the
+# eight paired observations cap the Holm-corrected Wilcoxon p at 0.031, which
+# is significant only if every instance agrees; twenty instances give the test
+# adequate power.
+REPS = [1, 2, 3, 4, 5]
 # Wall-clock budgets make a single run non-reproducible: at a fixed seed the
 # realized cost varies by up to ~12% on the less stable families, which is the
 # same order as the effect under study. Every configuration is therefore run
