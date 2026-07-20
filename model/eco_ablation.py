@@ -24,8 +24,13 @@ RES = os.path.join(ROOT, "results2")
 OUT = os.path.join(RES, "eco_ablation.csv")
 FAMS = ["nyc_manhattan", "peshawar_real", "solomon_c101", "solomon_r202"]
 REPS = [1, 2]
+# Wall-clock budgets make a single run non-reproducible: at a fixed seed the
+# realized cost varies by up to ~12% on the less stable families, which is the
+# same order as the effect under study. Every configuration is therefore run
+# over several seeds and compared on seed medians.
+SEEDS = [0, 1, 2, 3, 4]
 POLICIES = ["fixed_low", "fixed_med", "fixed_high", "opt_nofeas", "opt_full"]
-FIELDS = ["family", "rep", "policy", "E_cost", "E_fuel", "E_emission",
+FIELDS = ["family", "rep", "seed", "policy", "E_cost", "E_fuel", "E_emission",
           "E_late_min", "P_late", "P_defer", "P_trigger", "n_veh",
           "arc_shortfall_share", "pct_low", "pct_med", "pct_high", "secs"]
 BIG = 10**9
@@ -54,6 +59,20 @@ def shortfall_share(inst, sc, routes, speeds):
     return cnt / max(tot, 1)
 
 
+def _lock(op, lv):
+    """Wrap a structural operator so every arc keeps the locked speed level.
+
+    Necessary because hgls._fix_speeds pads lengthened routes with the medium
+    level and op_relocate seeds new routes with [1, 1]; without this wrapper a
+    nominally fixed-speed policy silently drifts toward medium.
+    """
+    def wrapped(routes, speeds, rng):
+        r, s = op(routes, speeds, rng)
+        return r, [[lv] * len(x) for x in s]
+    wrapped.__name__ = op.__name__
+    return wrapped
+
+
 def run_policy(policy, inst, tr, seed=0):
     qp = np.quantile(tr.q, 0.75, axis=0)
     r0, s0 = P.construct(inst, tr, qp, ortools_s=5, seed=seed)
@@ -61,12 +80,15 @@ def run_policy(policy, inst, tr, seed=0):
         lv = {"fixed_low": 0, "fixed_med": 1, "fixed_high": 2}[policy]
         s0 = [[lv] * (len(r) + 1) for r in r0]
         bak = H.OPS[:]
-        H.OPS = [op for op in bak if "speed" not in op.__name__]
+        H.OPS = [_lock(op, lv) for op in bak
+                 if "speed" not in op.__name__]
         try:
             br, bs, _ = H.hgls(inst, tr, r0, s0, max_iter=BIG, no_improve=BIG,
                                beta=0.0, seed=seed, time_limit=15.0)
         finally:
             H.OPS = bak
+        bs = [[lv] * len(x) for x in bs]
+        assert all(v == lv for x in bs for v in x), "speed lock failed"
         return br, bs
     ekw = {"w_infeas": 0.0} if policy == "opt_nofeas" else {}
     br, bs, _ = H.hgls(inst, tr, r0, s0, max_iter=BIG, no_improve=BIG,
@@ -79,7 +101,7 @@ def main():
     if os.path.exists(OUT):
         import pandas as pd
         for _, r in pd.read_csv(OUT).iterrows():
-            done.add((r["family"], int(r["rep"]), r["policy"]))
+            done.add((r["family"], int(r["rep"]), int(r["seed"]), r["policy"]))
     new = not os.path.exists(OUT)
     f = open(OUT, "a", newline=""); w = csv.DictWriter(f, fieldnames=FIELDS)
     if new:
@@ -87,31 +109,34 @@ def main():
     for fam in FAMS:
         for rep in REPS:
             inst, tr, ca, te = SL.load_replicate(fam, rep)
-            for pol in POLICIES:
-                if (fam, rep, pol) in done:
-                    continue
-                t0 = time.perf_counter()
-                r, s = run_policy(pol, inst, tr, seed=0)
-                m = E.evaluate(inst, te, r, s)
-                lo, md, hi = speed_mix(s)
-                row = dict(family=fam, rep=rep, policy=pol,
-                           E_cost=round(m["E_cost"], 3),
-                           E_fuel=round(m["E_fuel"], 3),
-                           E_emission=round(m["E_emission"], 3),
-                           E_late_min=round(m["E_late_min"], 3),
-                           P_late=round(m["P_late"], 4),
-                           P_defer=round(m["P_defer"], 4),
-                           P_trigger=round(m["P_trigger"], 4),
-                           n_veh=len([x for x in r if x]),
-                           arc_shortfall_share=round(
-                               shortfall_share(inst, te, r, s), 4),
-                           pct_low=round(lo, 1), pct_med=round(md, 1),
-                           pct_high=round(hi, 1),
-                           secs=round(time.perf_counter() - t0, 1))
-                w.writerow(row); f.flush()
-                print(f"[eco] {fam} r{rep} {pol}: cost={m['E_cost']:.1f} "
-                      f"fuel={m['E_fuel']:.1f} mix={lo:.0f}/{md:.0f}/{hi:.0f} "
-                      f"({row['secs']}s)", flush=True)
+            for sd in SEEDS:
+                for pol in POLICIES:
+                    if (fam, rep, sd, pol) in done:
+                        continue
+                    t0 = time.perf_counter()
+                    r, s = run_policy(pol, inst, tr, seed=sd)
+                    m = E.evaluate(inst, te, r, s)
+                    lo, md, hi = speed_mix(s)
+                    row = dict(
+                        family=fam, rep=rep, seed=sd, policy=pol,
+                        E_cost=round(m["E_cost"], 3),
+                        E_fuel=round(m["E_fuel"], 3),
+                        E_emission=round(m["E_emission"], 3),
+                        E_late_min=round(m["E_late_min"], 3),
+                        P_late=round(m["P_late"], 4),
+                        P_defer=round(m["P_defer"], 4),
+                        P_trigger=round(m["P_trigger"], 4),
+                        n_veh=len([x for x in r if x]),
+                        arc_shortfall_share=round(
+                            shortfall_share(inst, te, r, s), 4),
+                        pct_low=round(lo, 1), pct_med=round(md, 1),
+                        pct_high=round(hi, 1),
+                        secs=round(time.perf_counter() - t0, 1))
+                    w.writerow(row); f.flush()
+                    print(f"[eco] {fam} r{rep} s{sd} {pol}: "
+                          f"cost={m['E_cost']:.1f} "
+                          f"mix={lo:.0f}/{md:.0f}/{hi:.0f} "
+                          f"({row['secs']}s)", flush=True)
     f.close()
     print("ECO ABLATION COMPLETE", flush=True)
 

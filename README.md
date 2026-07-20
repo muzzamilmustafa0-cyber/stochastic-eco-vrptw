@@ -66,6 +66,26 @@ python -m model.analyze2                                    # statistics tables
 python -m model.figures2                                    # result figures
 ```
 
+### Reproducibility scope and limits
+
+Scenario generation, instance construction, data preprocessing, and all
+statistical analysis are exactly reproducible: scenario replicates regenerate
+deterministically from CRC-32 seeds of the family and replicate labels, so no
+bulk scenario data is stored.
+
+The optimization stages are **not** bit-reproducible. The shared constructor
+(OR-Tools, 5 s) and the refinement search (15 s) are limited by wall-clock
+time, not by an iteration count, so the number of nodes and moves explored
+depends on machine speed and load. Re-running a configuration at a fixed seed
+therefore reproduces the qualitative result but not the exact cost: measured
+same-seed spread is below 0.2% on the stable families and up to about 12% on
+the least stable benchmark family. This is the same instability quantified by
+the seed-repeat study (`repeats30.csv`, coefficient of variation 1-10%
+depending on family). Conclusions in the paper are accordingly based on
+medians across instances and seeds with paired statistics, never on single
+runs. To reproduce reported numbers more closely, run on an unloaded machine
+and increase the seed count rather than expecting an exact match.
+
 Script-to-output map: `run_final.py` writes `results2/main.csv` (main comparison
 table and per-instance appendix), `exact.csv` (verification table),
 `shifts.csv` (shift figure), `scount.csv` (scenario-count figure),

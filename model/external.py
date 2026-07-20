@@ -80,7 +80,7 @@ def speed_descent(inst, sc, routes, speeds, max_pass=3):
                     speeds[r][k] = lv
                     f = E.evaluate(inst, sc, routes, speeds)["fitness"]
                     if f < best - 1e-9:
-                        best = f; orig = lv
+                        best = f; orig = lv; improved = True
                     else:
                         speeds[r][k] = orig
         if not improved:
