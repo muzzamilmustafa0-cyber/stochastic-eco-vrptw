@@ -46,27 +46,9 @@ numbered scripts in `data_pipeline/scripts/`. The built instances under
 
 ## Reproduce
 
-```
-pip install -r requirements.txt
-
-# rebuild datasets from raw (optional; instances are already provided)
-python data_pipeline/scripts/01_travel_time_distributions.py
-python data_pipeline/scripts/02_demand_distributions.py
-python data_pipeline/scripts/03_fuse_nyc_instances.py
-python data_pipeline/scripts/04_fuse_dublin_instance.py
-python data_pipeline/scripts/05_fuse_solomon_benchmark.py
-python data_pipeline/scripts/06_fuse_peshawar_instance.py
-
-# experiments
-python -m model.run_campaign      # main comparison
-python -m model.ablation          # ablation
-python -m model.sensitivity       # recourse-weight sweep
-python -m model.analyze           # tables and tests
-python -m model.figures           # figures
-```
-
-Each instance is split into planning and held-out evaluation scenarios; every method
-is scored on the held-out set. Long runs write one row per result and resume on restart.
+The current experiment pipeline is the one under Reproduction map below; the
+modules `run_campaign`, `ablation`, `sensitivity`, `analyze`, and `figures`
+belong to an earlier study revision and are kept for archival comparison only.
 
 ## Reproduction map
 
